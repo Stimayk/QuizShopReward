@@ -1,4 +1,4 @@
-﻿using CounterStrikeSharp.API;
+using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using Newtonsoft.Json;
 using QuizApi;
@@ -42,7 +42,7 @@ namespace QuizShopReward
 
         private static string GetConfigDirectory()
         {
-            return Path.Combine(Server.GameDirectory, "csgo/addons/counterstrikesharp/configs/plugins");
+            return Path.Combine(Server.GameDirectory, "csgo/addons/counterstrikesharp/configs/plugins/Quiz/Modules");
         }
 
         private void EnsureConfigDirectory(string directoryPath)
