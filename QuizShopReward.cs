@@ -1,5 +1,6 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using QuizApi;
 using ShopAPI;
@@ -10,7 +11,7 @@ namespace QuizShopReward
     {
         public override string ModuleName => "QuizShopReward";
         public override string ModuleAuthor => "E!N";
-        public override string ModuleVersion => "v1.0";
+        public override string ModuleVersion => "v1.1";
         public override string ModuleDescription => "Module that adds rewards for quiz participation";
 
         private IQuizApi? QUIZ_API;
@@ -18,6 +19,7 @@ namespace QuizShopReward
         private QuizShopRewardConfig? _config;
         private int _Min;
         private int _Max;
+        private int _Winning;
 
         public override void OnAllPluginsLoaded(bool hotReload)
         {
@@ -31,12 +33,14 @@ namespace QuizShopReward
 
             if (QUIZ_API == null || SHOP_API == null)
             {
-                Console.WriteLine($"{ModuleName} | Error: Quiz or Shop API is not available.");
+                Logger.LogError($"Quiz or Shop API is not available.");
                 return;
             }
 
             InitializeQuizShopReward();
 
+            QUIZ_API.OnQuizStart += HandleQuizStart;
+            QUIZ_API.OnQuizEnd += HandleQuizEnd;
             QUIZ_API.OnPlayerWin += HandlePlayerWin;
         }
 
@@ -50,7 +54,7 @@ namespace QuizShopReward
             if (!Directory.Exists(directoryPath))
             {
                 Directory.CreateDirectory(directoryPath);
-                Console.WriteLine($"{ModuleName} | Created configuration directory at: {directoryPath}");
+                Logger.LogInformation($"Created configuration directory at: {directoryPath}");
             }
         }
 
@@ -58,22 +62,40 @@ namespace QuizShopReward
         {
             if (_config == null)
             {
-                Console.WriteLine($"{ModuleName} | Error: Configuration is not loaded.");
+                Logger.LogError($"Configuration is not loaded.");
                 return;
             }
 
             _Min = _config.WinMin;
             _Max = _config.WinMax;
-            Console.WriteLine($"{ModuleName} | Initialized: Min = {_Min}, Max = {_Max}");
+            Logger.LogInformation($"Initialized: Min = {_Min}, Max = {_Max}");
         }
 
-        private void HandlePlayerWin(CCSPlayerController player)
+        private void HandleQuizStart()
         {
             if (QUIZ_API != null)
             {
                 int reward = new Random().Next(_Min, _Max);
-                player.PrintToChat($"{Localizer["RewardWin", QUIZ_API.GetTranslatedText("Prefix"), reward]}");
-                SHOP_API?.SetClientCredits(player, reward);
+                _Winning = reward;
+                Server.PrintToChatAll($"{Localizer["Reward", QUIZ_API.GetTranslatedText("Prefix"), reward]}");
+            }
+        }
+
+        private void HandlePlayerWin(CCSPlayerController player)
+        {
+            if (QUIZ_API != null && SHOP_API != null)
+            {
+                player.PrintToChat($"{Localizer["RewardWin", QUIZ_API.GetTranslatedText("Prefix"), _Winning]}");
+                int credits = (SHOP_API.GetClientCredits(player));
+                SHOP_API.SetClientCredits(player, credits + _Winning);
+            }
+        }
+
+        private void HandleQuizEnd()
+        {
+            if (QUIZ_API != null)
+            {
+                Server.PrintToChatAll($"{Localizer["RewardLose", QUIZ_API.GetTranslatedText("Prefix"), _Winning]}");
             }
         }
     }
