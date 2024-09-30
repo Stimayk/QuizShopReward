@@ -11,7 +11,7 @@ namespace QuizShopReward
     {
         public override string ModuleName => "QuizShopReward";
         public override string ModuleAuthor => "E!N";
-        public override string ModuleVersion => "v1.1";
+        public override string ModuleVersion => "v1.1.1";
         public override string ModuleDescription => "Module that adds rewards for quiz participation";
 
         private IQuizApi? QUIZ_API;
@@ -86,8 +86,7 @@ namespace QuizShopReward
             if (QUIZ_API != null && SHOP_API != null)
             {
                 player.PrintToChat($"{Localizer["RewardWin", QUIZ_API.GetTranslatedText("Prefix"), _Winning]}");
-                int credits = (SHOP_API.GetClientCredits(player));
-                SHOP_API.SetClientCredits(player, credits + _Winning);
+                SHOP_API.AddClientCredits(player, _Winning);
             }
         }
 
